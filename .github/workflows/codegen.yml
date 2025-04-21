@@ -1,30 +1,59 @@
-name: Code Generation from Jira Issue
+name: JiraPilot - Ollama Code Generation
 
 on:
-  repository_dispatch:
-    types: [jira_branch_created]
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Feature Branch Name'
+        required: true
+      ticket_key:
+        description: 'Jira Ticket Key'
+        required: true
+      description:
+        description: 'Description of code generation'
+        required: true
 
 jobs:
-  generate_code:
+  summarize:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Install Ollama
+      run: curl -fsSL https://ollama.com/install.sh | sh
 
-      - name: Print Payload
-        run: |
-          echo "Branch Name: ${{ github.event.client_payload.branch_name }}"
-          echo "Ticket Key: ${{ github.event.client_payload.ticket_key }}"
-          echo "Description: ${{ github.event.client_payload.description }}"
+    - name: Run Ollama Server
+      run: |
+        ollama serve &  # Run Ollama server in the background
+        ollama pull gemma3:1b  # Pull the model (you can change the model)
 
-      - name: Build Custom Docker Image
-        run: |
-          docker build -t jirapilot-codegen .
+    - name: Install dependencies
+      run: |
+        python3 -m venv venv  # Create a virtual environment
+        source venv/bin/activate  # Activate virtual environment
+        pip install -r requirements.txt  # Install necessary Python dependencies
 
-      - name: Run Code Generator with Ollama
-        run: |
-          docker run --rm \
-            -e DESCRIPTION="${{ github.event.client_payload.description }}" \
-            -e OLLAMA_MODEL="gemma:2b" \
-            jirapilot-codegen
+    - name: Run code generation with Ollama
+      run: |
+        python3 code_generator.py "${{ github.event.inputs.description }}"  # Generate code based on description
+
+    - name: Commit and push generated code to repo
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the GitHub token to push changes
+        JIRA_TICKET_KEY: ${{ github.event.inputs.ticket_key }}  # Use Jira issue key
+        FEATURE_BRANCH: ${{ github.event.inputs.branch_name }}  # Feature branch name
+      run: |
+        # Configure git with the appropriate name and email
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        
+        # Check out the feature branch
+        git checkout $FEATURE_BRANCH
+        
+        # Add the generated code file to the repository
+        git add generated_code.py
+        
+        # Commit the generated code with the Jira issue key in the message
+        git commit -m "[${{ env.JIRA_TICKET_KEY }}] Add generated code for prompt"
+        
+        # Push the changes to the feature branch
+        git push origin $FEATURE_BRANCH
