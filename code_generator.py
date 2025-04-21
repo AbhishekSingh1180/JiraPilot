@@ -1,25 +1,53 @@
+import os
+import re
 import requests
-import sys
 
-def generate_code(prompt):
-    url = "http://localhost:11434/api/generate"
-    response = requests.post(url, json={
-        "model": "gemma3:1b",  # You can change the model if needed
+description = os.getenv("DESCRIPTION", "")
+model = os.getenv("OLLAMA_MODEL", "phi3:mini")
+ollama_url = "http://localhost:11434/api/generate"
+
+def parse_description(desc):
+    def extract(tag):
+        match = re.search(rf"## {tag}\s+(.*?)(?=\n##|\Z)", desc, re.DOTALL)
+        return match.group(1).strip() if match else None
+
+    return {
+        "prompt": extract("Prompt"),
+        "filename": extract("filename"),
+        "path": extract("path")
+    }
+
+def call_ollama(prompt):
+    print("🧠 Calling Ollama with prompt:", prompt[:60], "...")
+    res = requests.post(ollama_url, json={
+        "model": model,
         "prompt": prompt,
         "stream": False
     })
-    return response.json().get("response", "")
+    res.raise_for_status()
+    return res.json()["response"]
 
-def main():
-    # The description from Jira will be passed as a command-line argument
-    prompt = sys.argv[1]
-    
-    # Generate code based on the provided prompt
-    generated_code = generate_code(prompt)
+# Parse the incoming description
+parsed = parse_description(description)
+prompt = parsed["prompt"]
+filename = parsed["filename"] or "main.py"
+filepath = parsed["path"] or f"code/{filename}"
 
-    # Write the generated code to a file
-    with open("generated_code.py", "w") as file:
-        file.write(generated_code)
+print("📦 Payload Info:")
+print("  ✅ Prompt:", prompt)
+print("  📄 Filename:", filename)
+print("  📂 Path:", filepath)
 
-if __name__ == "__main__":
-    main()
+# Generate code from prompt
+try:
+    code = call_ollama(prompt)
+except Exception as e:
+    print("❌ Ollama error:", str(e))
+    code = f"# ERROR: Failed to generate from prompt\n# Prompt:\n{prompt}\n"
+
+# Write the file
+os.makedirs(os.path.dirname(filepath), exist_ok=True)
+with open(filepath, "w") as f:
+    f.write(code)
+
+print(f"✅ Code written to: {filepath}")
