@@ -24,6 +24,14 @@ jobs:
         source venv/bin/activate  # Activate virtual environment
         pip install -r requirements.txt  # Install necessary Python dependencies
 
+    - name: Install Ollama
+      run: curl -fsSL https://ollama.com/install.sh | sh  # Install Ollama for LLM usage
+
+    - name: Start Ollama Server and Pull Model
+      run: |
+        ollama serve &  # Run Ollama server in the background
+        ollama pull gemma3:1b  # Pull the gemma:2b model
+
     - name: Run code generation with Ollama
       run: |
         python3 code_generator.py "${{ github.event.client_payload.description }}"  # Generate code based on description
