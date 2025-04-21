@@ -17,11 +17,8 @@ jobs:
     - name: Pull latest from main
       run: git pull origin main
 
-    - name: Set up Python and dependencies
-      run: |
-        python3 -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
+    - name: Set up Python dependencies
+      run: pip install -r requirements.txt
 
     - name: Install Ollama
       run: curl -fsSL https://ollama.com/install.sh | sh
@@ -36,7 +33,7 @@ jobs:
       id: branch
       run: |
         TICKET_KEY="${{ github.event.client_payload.ticket_key }}"
-        BRANCH_BASENAME="feature/$TICKET_KEY"
+        BRANCH_BASENAME="$TICKET_KEY"
         VERSION=1
         UNIQUE_BRANCH="$BRANCH_BASENAME"
 
