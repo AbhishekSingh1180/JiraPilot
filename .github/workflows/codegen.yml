@@ -38,13 +38,13 @@ jobs:
 
     - name: Commit and push generated code to repo
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use the GitHub token to push changes
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}  # Use the GitHub token to push changes
         JIRA_TICKET_KEY: ${{ github.event.inputs.ticket_key }}  # Use Jira issue key
         FEATURE_BRANCH: ${{ github.event.inputs.branch_name }}  # Feature branch name
       run: |
         # Configure git with the appropriate name and email
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
+        git config --global user.name "Abhishek Singh"
+        git config --global user.email "abhishek11801529@gmail.com"
         
         # Check out the feature branch
         git checkout $FEATURE_BRANCH
