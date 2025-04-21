@@ -19,5 +19,8 @@ RUN pip install -r requirements.txt
 # Copy the code generation script
 COPY code_generator.py .
 
+# Pull the gemma3:1b model (only need this once when building the image)
+RUN /root/.ollama/bin/ollama pull gemma3:1b
+
 # Default command to run
 CMD ["python3", "code_generator.py"]
