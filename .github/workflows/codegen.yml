@@ -1,17 +1,8 @@
 name: JiraPilot - Ollama Code Generation
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch_name:
-        description: 'Feature Branch Name'
-        required: true
-      ticket_key:
-        description: 'Jira Ticket Key'
-        required: true
-      description:
-        description: 'Description of code generation'
-        required: true
+  repository_dispatch:
+    types: [jira_branch_created]  # Triggered by the Jira webhook
 
 jobs:
   summarize:
@@ -34,17 +25,17 @@ jobs:
 
     - name: Run code generation with Ollama
       run: |
-        python3 code_generator.py "${{ github.event.inputs.description }}"  # Generate code based on description
+        python3 code_generator.py "${{ github.event.client_payload.description }}"  # Generate code based on description
 
     - name: Commit and push generated code to repo
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}  # Use the GitHub token to push changes
-        JIRA_TICKET_KEY: ${{ github.event.inputs.ticket_key }}  # Use Jira issue key
-        FEATURE_BRANCH: ${{ github.event.inputs.branch_name }}  # Feature branch name
+        JIRA_TICKET_KEY: ${{ github.event.client_payload.ticket_key }}  # Use Jira issue key
+        FEATURE_BRANCH: ${{ github.event.client_payload.branch_name }}  # Feature branch name
       run: |
         # Configure git with the appropriate name and email
-        git config --global user.name "Abhishek Singh"
-        git config --global user.email "abhishek11801529@gmail.com"
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
         
         # Check out the feature branch
         git checkout $FEATURE_BRANCH
