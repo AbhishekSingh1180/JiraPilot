@@ -18,12 +18,6 @@ jobs:
       run: |
         git pull origin main  # Pull the latest changes from the main branch
 
-    - name: Create a new feature branch
-      run: |
-        FEATURE_BRANCH="${{ github.event.client_payload.ticket_key }}"
-        git checkout -b $FEATURE_BRANCH  # Create and checkout new feature branch based on the main branch
-        git push origin $FEATURE_BRANCH  # Push the new feature branch to the repository
-
     - name: Install dependencies
       run: |
         python3 -m venv venv  # Create a virtual environment
@@ -43,6 +37,9 @@ jobs:
         # Configure git with the appropriate name and email
         git config --global user.name "Abhishek Singh"
         git config --global user.email "abhishek11801529@gmail.com"
+
+        FEATURE_BRANCH="${{ github.event.client_payload.ticket_key }}"
+        git checkout -b $FEATURE_BRANCH  # Create and checkout new feature branch based on the main branch
         
         # Add the generated code file to the repository
         git add generated_code.py
