@@ -2,59 +2,73 @@ name: JiraPilot - Ollama Code Generation
 
 on:
   repository_dispatch:
-    types: [jira_branch_created]  # Triggered by the Jira webhook
+    types: [jira_branch_created]
 
 jobs:
-  summarize:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout the main branch
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
-        ref: main  # Ensure we are starting with the latest main branch
+        ref: main
 
-    - name: Pull the latest main branch
-      run: |
-        git pull origin main  # Pull the latest changes from the main branch
+    - name: Pull latest from main
+      run: git pull origin main
 
-    - name: Install dependencies
+    - name: Set up Python and dependencies
       run: |
-        python3 -m venv venv  # Create a virtual environment
-        source venv/bin/activate  # Activate virtual environment
-        pip install -r requirements.txt  # Install necessary Python dependencies
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
 
     - name: Install Ollama
-      run: curl -fsSL https://ollama.com/install.sh | sh  # Install Ollama for LLM usage
+      run: curl -fsSL https://ollama.com/install.sh | sh
 
-    - name: Start Ollama Server and Pull Model
+    - name: Start Ollama server and pull model
       run: |
-        ollama serve &  # Run Ollama server in the background
-        ollama pull gemma3:1b  # Pull the gemma:2b model
+        ~/.ollama/bin/ollama serve &
+        sleep 5
+        ~/.ollama/bin/ollama pull gemma3:1b
 
-    - name: Run code generation with Ollama
+    - name: Create unique feature branch
+      id: branch
       run: |
-        python3 code_generator.py "${{ github.event.client_payload.description }}"  # Generate code based on description
+        TICKET_KEY="${{ github.event.client_payload.ticket_key }}"
+        BRANCH_BASENAME="feature/$TICKET_KEY"
+        VERSION=1
+        UNIQUE_BRANCH="$BRANCH_BASENAME"
 
-    - name: Commit and push generated code to feature branch
+        git fetch origin
+
+        while git ls-remote --exit-code --heads origin "$UNIQUE_BRANCH" >/dev/null 2>&1; do
+          UNIQUE_BRANCH="${BRANCH_BASENAME}_v$VERSION"
+          VERSION=$((VERSION+1))
+        done
+
+        echo "branch_name=$UNIQUE_BRANCH" >> $GITHUB_OUTPUT
+        echo "✅ Using branch: $UNIQUE_BRANCH"
+
+    - name: Create and checkout feature branch
+      run: |
+        git checkout -b ${{ steps.branch.outputs.branch_name }}
+
+    - name: Run code generation
       env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}  # Use the GitHub token to push changes
-        JIRA_TICKET_KEY: ${{ github.event.client_payload.ticket_key }}  # Use Jira issue key
-        FEATURE_BRANCH: ${{ github.event.client_payload.branch_name }}  # Feature branch name
+        DESCRIPTION: "${{ github.event.client_payload.description }}"
+        OLLAMA_MODEL: "gemma3:1b"
       run: |
-        # Configure git with the appropriate name and email
-        git config --global user.name "Abhishek Singh"
-        git config --global user.email "abhishek11801529@gmail.com"
+        python3 code_generator.py "$DESCRIPTION"
 
-        FEATURE_BRANCH="${{ github.event.client_payload.ticket_key }}"
-        git checkout -b $FEATURE_BRANCH  # Create and checkout new feature branch based on the main branch
-        git pull
-        
-        # Add the generated code file to the repository
-        git add generated_code.py
-        
-        # Commit the generated code with the Jira issue key in the message
-        git commit -m "[${{ env.JIRA_TICKET_KEY }}] Add generated code for prompt"
-        
-        # Push the changes to the feature branch
-        git push origin $FEATURE_BRANCH
+    - name: Commit and push generated code
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        JIRA_TICKET_KEY: ${{ github.event.client_payload.ticket_key }}
+      run: |
+        git config user.name "abhishek singh"
+        git config user.email "Abhishek11801529@gmail.com"
+
+        git add .
+        git commit -m "[${JIRA_TICKET_KEY}] Add generated code"
+        git push origin ${{ steps.branch.outputs.branch_name }}
