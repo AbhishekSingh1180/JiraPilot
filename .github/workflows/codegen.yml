@@ -9,9 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Install Ollama
-      run: curl -fsSL https://ollama.com/install.sh | sh
-
     - name: Checkout the main branch
       uses: actions/checkout@v2
       with:
@@ -21,22 +18,23 @@ jobs:
       run: |
         git pull origin main  # Pull the latest changes from the main branch
 
+    - name: Create a new feature branch
+      run: |
+        FEATURE_BRANCH="${{ github.event.client_payload.ticket_key }}"
+        git checkout -b $FEATURE_BRANCH  # Create and checkout new feature branch based on the main branch
+        git push origin $FEATURE_BRANCH  # Push the new feature branch to the repository
+
     - name: Install dependencies
       run: |
         python3 -m venv venv  # Create a virtual environment
         source venv/bin/activate  # Activate virtual environment
         pip install -r requirements.txt  # Install necessary Python dependencies
 
-    - name: Checkout the feature branch
-      uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.client_payload.branch_name }}  # Checkout feature branch
-
     - name: Run code generation with Ollama
       run: |
         python3 code_generator.py "${{ github.event.client_payload.description }}"  # Generate code based on description
 
-    - name: Commit and push generated code to repo
+    - name: Commit and push generated code to feature branch
       env:
         GITHUB_TOKEN: ${{ secrets.TOKEN }}  # Use the GitHub token to push changes
         JIRA_TICKET_KEY: ${{ github.event.client_payload.ticket_key }}  # Use Jira issue key
@@ -44,10 +42,9 @@ jobs:
       run: |
         # Configure git with the appropriate name and email
         git config --global user.name "Abhishek Singh"
-        git config --global user.email "abhihek11801529@gmail.com"
+        git config --global user.email "abhishek11801529@gmail.com"
         
         # Add the generated code file to the repository
-        git checkout ${{ github.event.client_payload.ticket_key }}
         git add generated_code.py
         
         # Commit the generated code with the Jira issue key in the message
