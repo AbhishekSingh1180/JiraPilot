@@ -1,21 +1,32 @@
-FROM python:3.11-slim
+# Use an official Ubuntu as a base image
+FROM ubuntu:20.04
 
+# Install dependencies (curl, python3, pip, etc.)
+RUN apt-get update && apt-get install -y \
+    curl \
+    python3 \
+    python3-pip \
+    tar \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies (if required)
+COPY requirements.txt /app/requirements.txt
+RUN pip3 install -r /app/requirements.txt
+
+# Install Ollama
+RUN curl -sSL https://ollama.com/ollama-linux-x64.tar.gz | tar -xz -C /root/.ollama
+
+# Set the path for Ollama
+ENV PATH="/root/.ollama:$PATH"
+
+# Copy the code generation script into the container
+COPY code_generator.py /app/code_generator.py
+
+# Make sure to set the working directory to /app
 WORKDIR /app
 
-# Install system deps & Ollama
-RUN apt-get update && apt-get install -y curl git && \
-    curl -fsSL https://ollama.com/install.sh | sh
+# Set default entrypoint to Ollama (you can change this if needed)
+ENTRYPOINT ["/root/.ollama/ollama"]
 
-# Copy requirements and install Python deps
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-# Copy codegen script
-COPY generate_code.py .
-
-# Pull model ahead of time (e.g., gemma:2b)
-ARG OLLAMA_MODEL=gemma:2b
-RUN /root/.ollama/bin/ollama pull $OLLAMA_MODEL
-
-# Run Ollama in background and then generate code
-CMD /root/.ollama/bin/ollama serve & sleep 5 && python generate_code.py
+# Define the command to pull a model (optional, you can pull the model at build time)
+CMD ["pull", "gemma:2b"]
