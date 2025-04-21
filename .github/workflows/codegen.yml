@@ -12,26 +12,25 @@ jobs:
     - name: Install Ollama
       run: curl -fsSL https://ollama.com/install.sh | sh
 
-    - name: Run Ollama Server
-      run: |
-        ollama serve &  # Run Ollama server in the background
-        ollama pull gemma3:1b  # Pull the model (you can change the model)
-
-    - name: Checkout the feature branch
+    - name: Checkout the main branch
       uses: actions/checkout@v2
       with:
-        ref: ${{ github.event.client_payload.branch_name }}  # Checkout feature branch
+        ref: main  # Ensure we are starting with the latest main branch
 
     - name: Pull the latest main branch
       run: |
-        git fetch origin main  # Fetch the latest changes from main branch
-        git merge origin/main --no-ff -m "Sync with main before code generation"  # Merge main into feature branch
+        git pull origin main  # Pull the latest changes from the main branch
 
     - name: Install dependencies
       run: |
         python3 -m venv venv  # Create a virtual environment
         source venv/bin/activate  # Activate virtual environment
         pip install -r requirements.txt  # Install necessary Python dependencies
+
+    - name: Checkout the feature branch
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.client_payload.branch_name }}  # Checkout feature branch
 
     - name: Run code generation with Ollama
       run: |
@@ -45,9 +44,10 @@ jobs:
       run: |
         # Configure git with the appropriate name and email
         git config --global user.name "Abhishek Singh"
-        git config --global user.email "abhishek11801529@gmail.com"
+        git config --global user.email "abhihek11801529@gmail.com"
         
         # Add the generated code file to the repository
+        git checkout ${{ github.event.client_payload.ticket_key }}
         git add generated_code.py
         
         # Commit the generated code with the Jira issue key in the message
