@@ -2,7 +2,7 @@ import os
 import requests
 
 description = os.getenv("DESCRIPTION")
-model = os.getenv("OLLAMA_MODEL", "gemma:2b")
+model = os.getenv("OLLAMA_MODEL", "gemma3:1b")
 
 def generate_code(prompt):
     url = "http://localhost:11434/api/generate"
