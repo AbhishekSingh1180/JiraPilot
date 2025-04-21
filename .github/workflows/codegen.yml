@@ -17,6 +17,16 @@ jobs:
         ollama serve &  # Run Ollama server in the background
         ollama pull gemma3:1b  # Pull the model (you can change the model)
 
+    - name: Checkout the feature branch
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.client_payload.branch_name }}  # Checkout feature branch
+
+    - name: Pull the latest main branch
+      run: |
+        git fetch origin main  # Fetch the latest changes from main branch
+        git merge origin/main --no-ff -m "Sync with main before code generation"  # Merge main into feature branch
+
     - name: Install dependencies
       run: |
         python3 -m venv venv  # Create a virtual environment
@@ -34,11 +44,8 @@ jobs:
         FEATURE_BRANCH: ${{ github.event.client_payload.branch_name }}  # Feature branch name
       run: |
         # Configure git with the appropriate name and email
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        
-        # Check out the feature branch
-        git checkout $FEATURE_BRANCH
+        git config --global user.name "Abhishek Singh"
+        git config --global user.email "abhishek11801529@gmail.com"
         
         # Add the generated code file to the repository
         git add generated_code.py
