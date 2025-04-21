@@ -48,6 +48,7 @@ jobs:
 
         FEATURE_BRANCH="${{ github.event.client_payload.ticket_key }}"
         git checkout -b $FEATURE_BRANCH  # Create and checkout new feature branch based on the main branch
+        git pull
         
         # Add the generated code file to the repository
         git add generated_code.py
