@@ -20,7 +20,7 @@ RUN curl -sSL https://ollama.com/ollama-linux-x64.tar.gz | tar -xz -C /root/.oll
 ENV PATH="/root/.ollama:$PATH"
 
 # Copy the code generation script into the container
-COPY code_generator.py /app/code_generator.py
+COPY generate_code.py /app/generate_code.py
 
 # Make sure to set the working directory to /app
 WORKDIR /app
