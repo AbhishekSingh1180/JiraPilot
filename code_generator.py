@@ -1,24 +1,27 @@
 import os
 import re
 import requests
+import yaml
 
 description = os.getenv("DESCRIPTION", "")
-model = os.getenv("OLLAMA_MODEL", "phi3:mini")
+model = os.getenv("OLLAMA_MODEL", "gemma3:1b")
 ollama_url = "http://localhost:11434/api/generate"
 
 def parse_description(desc):
-    def extract(tag):
-        match = re.search(rf"## {tag}\s+(.*?)(?=\n##|\Z)", desc, re.DOTALL)
-        return match.group(1).strip() if match else None
+    # Extract the YAML content between {code:yaml} and {code}
+    yaml_match = re.search(r"\{code:yaml\}(.*?)\{code\}", desc, re.DOTALL)
+    yaml_data = yaml_match.group(1).strip() if yaml_match else None
+    
+    # Parse YAML if found
+    if yaml_data:
+        parsed_yaml = yaml.safe_load(yaml_data)
+    else:
+        parsed_yaml = {}
 
-    return {
-        "prompt": extract("Prompt"),
-        "filename": extract("filename"),
-        "path": extract("path")
-    }
+    return parsed_yaml
 
 def call_ollama(prompt):
-    print("🧠 Calling Ollama with prompt:", prompt[:60], "...")
+    print("🧠 Calling Ollama with prompt:", prompt[:2000], "...")
     res = requests.post(ollama_url, json={
         "model": model,
         "prompt": prompt,
@@ -29,9 +32,9 @@ def call_ollama(prompt):
 
 # Parse the incoming description
 parsed = parse_description(description)
-prompt = parsed["prompt"]
-filename = parsed["filename"] or "main.py"
-filepath = parsed["path"] or f"code/{filename}"
+prompt = parsed.get("Prompt")
+filename = parsed.get("Filename", "main.py")
+filepath = parsed.get("Path", f"code/{filename}")
 
 print("📦 Payload Info:")
 print("  ✅ Prompt:", prompt)
@@ -51,3 +54,6 @@ with open(filepath, "w") as f:
     f.write(code)
 
 print(f"✅ Code written to: {filepath}")
+
+# Output filename with path for git add
+print(f"Git add file: {filepath}")
