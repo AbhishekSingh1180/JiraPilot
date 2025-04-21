@@ -28,9 +28,9 @@ jobs:
 
     - name: Start Ollama server and pull model
       run: |
-        ~/.ollama/bin/ollama serve &
+        ollama serve &
         sleep 5
-        ~/.ollama/bin/ollama pull gemma3:1b
+        ollama pull gemma3:1b
 
     - name: Create unique feature branch
       id: branch
