@@ -1,0 +1,30 @@
+name: Code Generation from Jira Issue
+
+on:
+  repository_dispatch:
+    types: [jira_branch_created]
+
+jobs:
+  generate_code:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Print Payload
+        run: |
+          echo "Branch Name: ${{ github.event.client_payload.branch_name }}"
+          echo "Ticket Key: ${{ github.event.client_payload.ticket_key }}"
+          echo "Description: ${{ github.event.client_payload.description }}"
+
+      - name: Build Custom Docker Image
+        run: |
+          docker build -t jirapilot-codegen .
+
+      - name: Run Code Generator with Ollama
+        run: |
+          docker run --rm \
+            -e DESCRIPTION="${{ github.event.client_payload.description }}" \
+            -e OLLAMA_MODEL="gemma:2b" \
+            jirapilot-codegen
