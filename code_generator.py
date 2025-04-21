@@ -6,6 +6,7 @@ import yaml
 description = os.getenv("DESCRIPTION", "")
 model = os.getenv("OLLAMA_MODEL", "gemma3:1b")
 ollama_url = "http://localhost:11434/api/generate"
+Fine_tune = 'Generate code only'
 
 def parse_description(desc):
     # Extract the YAML content between {code:yaml} and {code}
@@ -24,7 +25,7 @@ def call_ollama(prompt):
     print("🧠 Calling Ollama with prompt:", prompt[:2000], "...")
     res = requests.post(ollama_url, json={
         "model": model,
-        "prompt": prompt,
+        "prompt": prompt + '-' + Fine_tune,
         "stream": False
     })
     res.raise_for_status()
