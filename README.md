@@ -1,45 +1,31 @@
-# **JiraPilot: Automated Code Generation with Jira and GitHub Actions**
+# JiraPilot
 
-**JiraPilot** is a tool that automates code generation when a feature branch is created in Jira. The system integrates **Jira**, **GitHub Actions**, and **Ollama (a Local Large Language Model)** to generate boilerplate code based on the information provided in the Jira ticket description.
+JiraPilot is an integration between **Jira**, **GitHub Actions**, and **Ollama** for automatic code generation. The project uses **Ollama**, a local large language model, to generate code based on a description provided in a Jira issue. The generated code is then committed back to the GitHub repository with a reference to the Jira ticket key.
 
-## 🚀 Features
+## Workflow Overview
 
-- **Automated Code Generation**: Automatically generates boilerplate code based on the Jira issue description when a feature branch is created.
-- **Jira Integration**: Utilizes Jira Automation to trigger GitHub Actions with branch details and description.
-- **GitHub Actions**: GitHub Actions runs the code generation workflow on a dedicated runner.
-- **Ollama for LLM**: Ollama (Local Large Language Model) generates code based on the prompt given in the Jira description.
+1. **Jira Automation**: When a feature branch is created in Jira, a webhook triggers a GitHub Actions workflow.
+2. **Ollama Code Generation**: The workflow runs a Python script that communicates with Ollama to generate code based on the Jira ticket description.
+3. **GitHub Commit**: The generated code is committed back to the GitHub repository with a commit message that includes the Jira issue key.
 
-## 🛠️ Setup
+## Setup
 
-### 1. **Jira Configuration**
+1. **Jira Webhook**: Set up a Jira webhook to trigger the GitHub Action using the Jira Automation rule.
+2. **GitHub Action**: The action triggers when the Jira issue is updated or a branch is created, calling the **Ollama** API and running the code generator.
+3. **Ollama**: Ensure you have **Ollama** installed and running locally to generate code.
 
-- Set up an automation rule in Jira to trigger a webhook whenever a new feature branch is created.
-- The webhook sends the branch name, ticket key, and description to GitHub.
+## Running the Workflow
 
-### 2. **GitHub Action Configuration**
+1. Trigger the workflow manually or automatically from Jira by creating a new branch.
+2. The GitHub Action pulls the required Ollama model and generates code.
+3. The generated code is committed back to the repository with a commit message containing the Jira issue key.
 
-- Configure a GitHub Action that listens for the `repository_dispatch` event triggered by Jira's webhook.
-- The action runs the code generation process in a Docker container with Ollama and commits the generated code back to the feature branch.
+## Requirements
 
-### 3. **Docker Environment**
+- **Jira** with webhooks enabled.
+- **Ollama** server running to handle code generation.
+- GitHub repository with GitHub Actions enabled.
 
-- Ollama is used within Docker to run the code generation process locally using a specified model.
-- The Docker setup includes all dependencies needed to execute the code generation workflow.
+## License
 
-## 🧑‍💻 Usage
-
-1. **Trigger Jira webhook**: When a new branch is created in Jira, the webhook sends the necessary details (branch name, ticket key, description) to GitHub.
-2. **GitHub Actions Workflow**: The GitHub Action processes the payload, runs the code generation process, and commits the generated code back to the feature branch.
-
-## 🗂️ Diagram
-
-Below is a flowchart that illustrates the process from Jira to code generation in GitHub:
-
-```mermaid
-flowchart TD
-    A[Jira - New Feature Branch Created] --> B[Trigger Jira Webhook]
-    B --> C[GitHub Action - Repository Dispatch Event]
-    C --> D[Run Code Generation with Ollama]
-    D --> E[Generate Boilerplate Code]
-    E --> F[Commit Code to Feature Branch]
-    F --> G[New Code Ready in Feature Branch]
+This project is licensed under the MIT License.
